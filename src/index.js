@@ -1,27 +1,48 @@
-const express = require('express');
-const app = express();
-const authRoutes = require('./routes/authRoutes');
-const dashboard  = require('./routes/dashboardRoutes');
-const authenticate = require('./middleware/authenticate'); 
-const session = require('express-session');
-const { secretKey } = require('./config/secrets');
-const PORT = 3000
+const express = require("express");
 
-// middleware in Express.js is used to parse incoming requests with JSON payloads.
-app.use(express.json());
+// import for cluster
+const cluster = require("cluster");
+const os = require("os");
 // end
 
-// for session express
-app.use(session({
-    secret: secretKey, // Use secret key from .env
-    resave: false,
-    saveUninitialized: false,
-    cookie: { maxAge:60000 } // Expire session after set time
-}));
-// end
+if (cluster.isMaster) {
+  const numCPUs = os.cpus().length;
 
-// all routes of auth
-app.use('/auth', authRoutes);
-app.use('/api',authenticate,dashboard);
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork(); // Create a worker process
+  }
 
-app.listen(PORT, () => console.log("Server running on port 3000"));
+  cluster.on("exit", (worker, code, signal) => {
+    console.log(`Worker ${worker.process.pid} died. Restarting...`);
+    cluster.fork();
+  });
+} else {
+  const app = express();
+  const authRoutes = require("./routes/authRoutes");
+  const dashboard = require("./routes/dashboardRoutes");
+  const authenticate = require("./middleware/authenticate");
+  const session = require("express-session");
+  const { secretKey } = require("./config/secrets");
+  const PORT = 3000;
+
+  // middleware in Express.js is used to parse incoming requests with JSON payloads.
+  app.use(express.json());
+  // end
+
+  // for session express
+  app.use(
+    session({
+      secret: secretKey, // Use secret key from .env
+      resave: false,
+      saveUninitialized: false,
+      cookie: { maxAge: 60000 }, // Expire session after set time
+    })
+  );
+  // end
+
+  // all routes of auth
+  app.use("/auth", authRoutes);
+  app.use("/api", authenticate, dashboard);
+
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}
