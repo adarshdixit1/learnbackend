@@ -1,22 +1,7 @@
 const express = require("express");
+const setupCluster = require("./clusterSetup");
 
-// import for cluster
-const cluster = require("cluster");
-const os = require("os");
-// end
-
-if (cluster.isMaster) {
-  const numCPUs = os.cpus().length;
-
-  for (let i = 0; i < numCPUs; i++) {
-    cluster.fork(); // Create a worker process
-  }
-
-  cluster.on("exit", (worker, code, signal) => {
-    console.log(`Worker ${worker.process.pid} died. Restarting...`);
-    cluster.fork();
-  });
-} else {
+const startServer = () => {
   const app = express();
   const authRoutes = require("./routes/authRoutes");
   const dashboard = require("./routes/dashboardRoutes");
@@ -45,4 +30,7 @@ if (cluster.isMaster) {
   app.use("/api", authenticate, dashboard);
 
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-}
+};
+
+// Initialize clustering
+setupCluster(startServer);
