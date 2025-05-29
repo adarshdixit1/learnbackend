@@ -1,5 +1,6 @@
 const express = require("express");
 const setupCluster = require("./clusterSetup");
+const connectDB = require("./db");
 
 const startServer = () => {
   const app = express();
@@ -9,6 +10,10 @@ const startServer = () => {
   const session = require("express-session");
   const { secretKey } = require("./config/secrets");
   const PORT = 3000;
+
+  // for connect the monogooes db
+  connectDB();
+  // end
 
   // middleware in Express.js is used to parse incoming requests with JSON payloads.
   app.use(express.json());
@@ -32,5 +37,6 @@ const startServer = () => {
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 };
 
+startServer();
 // Initialize clustering
-setupCluster(startServer);
+// setupCluster(startServer);
