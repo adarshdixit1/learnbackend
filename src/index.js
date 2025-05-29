@@ -37,6 +37,5 @@ const startServer = () => {
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 };
 
-startServer();
 // Initialize clustering
-// setupCluster(startServer);
+setupCluster(startServer);
